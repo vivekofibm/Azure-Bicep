@@ -1,0 +1,28 @@
+trigger:
+  - none
+
+pool:
+  vmImage: windows-latest
+
+variables:
+  serviceConnection: OU IT DIH TEST ( 57be197f-6a84-4882-a27b-79b87c33dc51 )
+  subscriptionId: 57be197f-6a84-4882-a27b-79b87c33dc51
+  tenantId: 0e2ed455-96af-4100-bed3-a8e5fd981685
+  objectId: b6bdb9db-c033-415e-b6b9-d2f8e5511143
+  resourceGroup: ou-dih-test-rg-we
+
+steps:
+  - task: AzureResourceManagerTemplateDeployment@3
+    displayName: Deployment
+    inputs:
+      deploymentScope: "Resource Group"
+      azureResourceManagerConnection: "$(serviceConnection)"
+      subscriptionId: "$(subscriptionId)"
+      action: "Create Or Update Resource Group"
+      resourceGroupName: "$(resourceGroup)"
+      location: "$(location)"
+      templateLocation: "Linked artifact"
+      csmFile: "Bicep_V2/dihTemplates/dihAzureTemplate.bicep"
+      csmParametersFile: "Bicep_V2/dihTemplates/params/dihAzureTemplate.test.parameters.json"
+      deploymentMode: "Incremental"
+      deploymentOutputs: "Deployment"

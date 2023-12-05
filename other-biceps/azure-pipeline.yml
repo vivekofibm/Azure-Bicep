@@ -1,0 +1,231 @@
+# trigger:
+# - none
+
+# pool:
+#   vmImage: ubuntu-latest
+
+# steps:
+# #- task: AzureResourceManagerTemplateDeployment@3
+# #  inputs:
+# #    deploymentScope: 'Resource Group'
+# #    azureResourceManagerConnection: 'Ebotify_Sponser(94ef17bd-8a0a-4325-89bb-329147622f1a)'
+# #    subscriptionId: '94ef17bd-8a0a-4325-89bb-329147622f1a'
+# #    action: 'Create Or Update Resource Group'
+# #    resourceGroupName: 'rg-ou'
+# #    location: 'UK South'
+# #    templateLocation: 'Linked artifact'
+# #    csmFile: 'other-biceps/Kubernetes-Provisioning.bicep'
+# #    deploymentMode: 'Incremental'
+# #    deploymentOutputs: 'AKS'
+  
+# #- task: KubernetesManifest@1
+# #  inputs:
+# #    action: 'deploy'
+# #    connectionType: 'kubernetesServiceConnection'
+# #    kubernetesServiceConnection: 'viv-test-conn'
+# #    namespace: 'default'
+# #    manifests: '$(System.DefaultWorkingDirectory)/other-biceps/deployment.yml'
+
+# - task: AzureResourceManagerTemplateDeployment@3
+#   inputs:
+#     deploymentScope: 'Resource Group'
+#     azureResourceManagerConnection: 'Ebotify_Sponser(94ef17bd-8a0a-4325-89bb-329147622f1a)'
+#     subscriptionId: '94ef17bd-8a0a-4325-89bb-329147622f1a'
+#     action: 'Create Or Update Resource Group'
+#     resourceGroupName: 'rg-ou'
+#     location: 'UK South'
+#     templateLocation: 'Linked artifact'
+#     csmFile: 'other-biceps/vnet.bicep'
+#     deploymentMode: 'Incremental'
+#     deploymentOutputs: 'VNET'
+
+# - task: AzureResourceManagerTemplateDeployment@3
+#   inputs:
+#     deploymentScope: 'Resource Group'
+#     azureResourceManagerConnection: 'Ebotify_Sponser(94ef17bd-8a0a-4325-89bb-329147622f1a)'
+#     subscriptionId: '94ef17bd-8a0a-4325-89bb-329147622f1a'
+#     action: 'Create Or Update Resource Group'
+#     resourceGroupName: 'rg-ou'
+#     location: 'UK South'
+#     templateLocation: 'Linked artifact'
+#     csmFile: 'other-biceps/azure_func.bicep'
+#     deploymentMode: 'Incremental'
+#     deploymentOutputs: 'Function App '
+
+
+# - task: AzureResourceManagerTemplateDeployment@3
+#   inputs:
+#     deploymentScope: 'Resource Group'
+#     azureResourceManagerConnection: 'Ebotify_Sponser(94ef17bd-8a0a-4325-89bb-329147622f1a)'
+#     subscriptionId: '94ef17bd-8a0a-4325-89bb-329147622f1a'
+#     action: 'Create Or Update Resource Group'
+#     resourceGroupName: 'rg-ou'
+#     location: 'UK South'
+#     templateLocation: 'Linked artifact'
+#     csmFile: 'other-biceps/cosmodb.bicep'
+#     deploymentMode: 'Incremental'
+#     deploymentOutputs: 'CosmoDb'
+
+#################################################################################################
+# trigger:
+# - none
+
+# pool:
+#   vmImage: ubuntu-latest
+
+# # variables:
+# #   db: '/subscriptions/94ef17bd-8a0a-4325-89bb-329147622f1a/resourceGroups/rg-ou/providers/Microsoft.Network/VirtualNetworks/ou-dih-test-vn-we-V2/subnets/DB'
+
+# steps:
+
+# - task: AzureResourceManagerTemplateDeployment@3
+#   inputs:
+#     deploymentScope: 'Resource Group'
+#     azureResourceManagerConnection: 'Ebotify_Sponser(94ef17bd-8a0a-4325-89bb-329147622f1a)'
+#     subscriptionId: '94ef17bd-8a0a-4325-89bb-329147622f1a'
+#     action: 'Create Or Update Resource Group'
+#     resourceGroupName: 'rg-ou'
+#     location: 'UK South'
+#     templateLocation: 'Linked artifact'
+#     csmFile: 'other-biceps/vnet_new.bicep'
+#     deploymentMode: 'Incremental'
+#     deploymentOutputs: 'VNET'
+
+# - bash: |
+
+#     echo "##vso[task.setvariable variable=cosmosdbsubnet]$(echo $VNET_OUTPUTS | jq -r '.cosmosdbsubnet.value')"
+# - bash: 
+#     echo $(cosmosdbsubnet)
+# #   echo "##vso[task.setvariable variable=cosmosdbsubnet]$(echo $VNET_OUTPUTS | jq -r '.cosmosdbsubnet.value')"
+
+# - task: AzureResourceManagerTemplateDeployment@3
+#   inputs:
+#     deploymentScope: 'Resource Group'
+#     azureResourceManagerConnection: 'Ebotify_Sponser(94ef17bd-8a0a-4325-89bb-329147622f1a)'
+#     subscriptionId: '94ef17bd-8a0a-4325-89bb-329147622f1a'
+#     action: 'Create Or Update Resource Group'
+#     resourceGroupName: 'rg-ou'
+#     location: 'UK South'
+#     templateLocation: 'Linked artifact'
+#     csmFile: 'other-biceps/func_app.bicep'
+#     # overrideParameters: -subnetCosmosDBName $(cosmosdbsubnet)
+#     deploymentMode: 'Incremental'
+#     deploymentOutputs: 'Function App '
+
+
+# - task: AzureResourceManagerTemplateDeployment@3
+#   inputs:
+#     deploymentScope: 'Resource Group'
+#     azureResourceManagerConnection: 'Ebotify_Sponser(94ef17bd-8a0a-4325-89bb-329147622f1a)'
+#     subscriptionId: '94ef17bd-8a0a-4325-89bb-329147622f1a'
+#     action: 'Create Or Update Resource Group'
+#     resourceGroupName: 'rg-ou'
+#     location: 'UK South'
+#     templateLocation: 'Linked artifact'
+#     csmFile: 'other-biceps/cosmodb.bicep'
+#     deploymentMode: 'Incremental'
+#     deploymentOutputs: 'CosmoDb'
+
+################################################################
+
+# trigger:
+# - none
+
+# pool:
+#   vmImage: ubuntu-latest
+
+# variables:
+#  - group: OU-bicep-acct
+
+# resources:
+#  repositories:
+#    - repository: boilerplate
+#      type: git
+#      endpoint: multi-pipeline-trigger
+#      name: boilerplate/multistage-pipeline
+#      ref: main
+
+
+# resources:
+#   repositories:
+#     - repository: boilerplate
+#       type: git
+#       name: multistage-pipeline/azure-pipelines.yml
+#       ref: main
+# stages:
+# - stage: provisioning 
+#   jobs:
+#    - job:
+#      steps:
+#       - task: AzureResourceManagerTemplateDeployment@3
+#         inputs:
+#           deploymentScope: 'Resource Group'
+#           azureResourceManagerConnection: 'Ebotify_Sponser(94ef17bd-8a0a-4325-89bb-329147622f1a)'
+#           subscriptionId: '94ef17bd-8a0a-4325-89bb-329147622f1a'
+#           action: 'Create Or Update Resource Group'
+#           resourceGroupName: 'rg-ou'
+#           location: 'UK South'
+#           templateLocation: 'Linked artifact'
+#           csmFile: 'other-biceps/vnet2.bicep'
+#           overrideParameters: -env $(env) -initial $(initial) -short_location $(short_location) -networkRange $(networkRange) -subnetAPIM $(subnetAPIM)
+#           deploymentMode: 'Incremental'
+#           deploymentOutputs: 'VNET'
+
+# - stage: Deployment
+#   jobs:
+#     - job:
+#       steps:
+#         - template: "../multistage-pipeline/azure-pipelines.yml"
+
+
+##############################################################
+
+# trigger:
+# - none
+
+# pool:
+#   vmImage: windows-latest
+
+# variables:
+#   resourceGroup: rg-ou
+
+
+# steps:
+
+# - task: AzureCLI@2
+#   inputs:
+#     azureSubscription: 'Ebotify_Sponser(94ef17bd-8a0a-4325-89bb-329147622f1a)'
+#     scriptType: 'ps'
+#     scriptLocation: 'inlineScript'
+#     inlineScript: 'az deployment group create --resource-group $(resourceGroup) --template-file ./other-biceps/Vnet/vnet.bicep --parameters ./other-biceps/Vnet/parameter_Vnet.json'
+
+# - task: AzureResourceManagerTemplateDeployment@3
+#   inputs:
+#     deploymentScope: 'Resource Group'
+#     azureResourceManagerConnection: 'Ebotify_Sponser(94ef17bd-8a0a-4325-89bb-329147622f1a)'
+#     subscriptionId: '94ef17bd-8a0a-4325-89bb-329147622f1a'
+#     action: 'Create Or Update Resource Group'
+#     resourceGroupName: 'rg-ou'
+#     location: 'UK South'
+#     templateLocation: 'Linked artifact'
+#     csmFile: 'other-biceps/Vnet/vnet.bicep'
+#     csmParametersFile: 'other-biceps/commonParameter.json'
+#     deploymentMode: 'Incremental'
+#     deploymentOutputs: 'VNET'
+
+# - task: AzureCLI@2
+#   inputs:
+#     azureSubscription: 'Ebotify_Sponser(94ef17bd-8a0a-4325-89bb-329147622f1a)'
+#     scriptType: 'ps'
+#     scriptLocation: 'inlineScript'
+#     inlineScript: 'az deployment group create --resource-group rg-ou --template-file ./other-biceps/Function_App/functionApp.bicep --parameters ./other-biceps/commonParameter.json'
+
+###########################################################################################################################
+
+
+
+
+
+
+
+

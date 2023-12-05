@@ -1,0 +1,154 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "namespaces_ou_dih_sit_eh_we_name": {
+            "defaultValue": "ou-dih-sit-eh-we",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.EventHub/namespaces",
+            "apiVersion": "2022-10-01-preview",
+            "name": "[parameters('namespaces_ou_dih_sit_eh_we_name')]",
+            "location": "West Europe",
+            "tags": {
+                "ResourceType": "Events",
+                "Owner": "Bartlomiej.Cichopek, Divya.Singhal, Vinay.Shettar"
+            },
+            "sku": {
+                "name": "Basic",
+                "tier": "Basic",
+                "capacity": 1
+            },
+            "properties": {
+                "minimumTlsVersion": "1.2",
+                "publicNetworkAccess": "Enabled",
+                "disableLocalAuth": false,
+                "zoneRedundant": true,
+                "isAutoInflateEnabled": false,
+                "maximumThroughputUnits": 0,
+                "kafkaEnabled": false
+            }
+        },
+        {
+            "type": "Microsoft.EventHub/namespaces/authorizationrules",
+            "apiVersion": "2022-10-01-preview",
+            "name": "[concat(parameters('namespaces_ou_dih_sit_eh_we_name'), '/Listen')]",
+            "location": "westeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('namespaces_ou_dih_sit_eh_we_name'))]"
+            ],
+            "properties": {
+                "rights": [
+                    "Listen"
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.EventHub/namespaces/authorizationrules",
+            "apiVersion": "2022-10-01-preview",
+            "name": "[concat(parameters('namespaces_ou_dih_sit_eh_we_name'), '/RootManageSharedAccessKey')]",
+            "location": "westeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('namespaces_ou_dih_sit_eh_we_name'))]"
+            ],
+            "properties": {
+                "rights": [
+                    "Listen",
+                    "Manage",
+                    "Send"
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.EventHub/namespaces/authorizationrules",
+            "apiVersion": "2022-10-01-preview",
+            "name": "[concat(parameters('namespaces_ou_dih_sit_eh_we_name'), '/Send')]",
+            "location": "westeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('namespaces_ou_dih_sit_eh_we_name'))]"
+            ],
+            "properties": {
+                "rights": [
+                    "Send"
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.EventHub/namespaces/eventhubs",
+            "apiVersion": "2022-10-01-preview",
+            "name": "[concat(parameters('namespaces_ou_dih_sit_eh_we_name'), '/customerprofile')]",
+            "location": "westeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('namespaces_ou_dih_sit_eh_we_name'))]"
+            ],
+            "properties": {
+                "retentionDescription": {
+                    "cleanupPolicy": "Delete",
+                    "retentionTimeInHours": 24
+                },
+                "messageRetentionInDays": 1,
+                "partitionCount": 2,
+                "status": "Active"
+            }
+        },
+        {
+            "type": "Microsoft.EventHub/namespaces/eventhubs",
+            "apiVersion": "2022-10-01-preview",
+            "name": "[concat(parameters('namespaces_ou_dih_sit_eh_we_name'), '/studyrecord')]",
+            "location": "westeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('namespaces_ou_dih_sit_eh_we_name'))]"
+            ],
+            "properties": {
+                "retentionDescription": {
+                    "cleanupPolicy": "Delete",
+                    "retentionTimeInHours": 1
+                },
+                "messageRetentionInDays": 1,
+                "partitionCount": 2,
+                "status": "Active"
+            }
+        },
+        {
+            "type": "Microsoft.EventHub/namespaces/networkRuleSets",
+            "apiVersion": "2022-10-01-preview",
+            "name": "[concat(parameters('namespaces_ou_dih_sit_eh_we_name'), '/default')]",
+            "location": "West Europe",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('namespaces_ou_dih_sit_eh_we_name'))]"
+            ],
+            "properties": {
+                "publicNetworkAccess": "Enabled",
+                "defaultAction": "Allow",
+                "virtualNetworkRules": [],
+                "ipRules": []
+            }
+        },
+        {
+            "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
+            "apiVersion": "2022-10-01-preview",
+            "name": "[concat(parameters('namespaces_ou_dih_sit_eh_we_name'), '/customerprofile/$Default')]",
+            "location": "westeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('namespaces_ou_dih_sit_eh_we_name'), 'customerprofile')]",
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('namespaces_ou_dih_sit_eh_we_name'))]"
+            ],
+            "properties": {}
+        },
+        {
+            "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
+            "apiVersion": "2022-10-01-preview",
+            "name": "[concat(parameters('namespaces_ou_dih_sit_eh_we_name'), '/studyrecord/$Default')]",
+            "location": "westeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('namespaces_ou_dih_sit_eh_we_name'), 'studyrecord')]",
+                "[resourceId('Microsoft.EventHub/namespaces', parameters('namespaces_ou_dih_sit_eh_we_name'))]"
+            ],
+            "properties": {}
+        }
+    ]
+}

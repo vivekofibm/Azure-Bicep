@@ -1,0 +1,50 @@
+trigger:
+- none
+
+pool:
+  vmImage: windows-latest
+
+# variables:
+#   serviceConnection: OU IT DIH TEST ( 57be197f-6a84-4882-a27b-79b87c33dc51 )
+#   subscriptionId: 57be197f-6a84-4882-a27b-79b87c33dc51
+#   tenantId: 0e2ed455-96af-4100-bed3-a8e5fd981685
+#   objectId: b6bdb9db-c033-415e-b6b9-d2f8e5511143
+#   resourceGroup: ou-dih-test-rg-we
+
+steps:
+
+- task: Bash@3
+  inputs:
+    targetType: 'inline'
+    script: | 
+      env=$(jq -r '.parameters.env.value' other-biceps/commonParameter.json)
+      echo "The value of parameterName is $parameterValue"
+
+- task: AzureResourceManagerTemplateDeployment@3
+  displayName: Deployment
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: 'Ebotify_Sponser(94ef17bd-8a0a-4325-89bb-329147622f1a)'
+    subscriptionId: '94ef17bd-8a0a-4325-89bb-329147622f1a'
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: 'rg-ou'
+    location: 'UK South'
+    templateLocation: 'Linked artifact'
+    overrideParameters: ''
+    deploymentMode: 'Incremental'
+    deploymentOutputs: 'Deployment'
+
+
+# - task: AzureResourceManagerTemplateDeployment@3
+#   displayName: Deployment
+#   inputs:
+#     deploymentScope: 'Resource Group'
+#     azureResourceManagerConnection: 'Ebotify_Sponser(94ef17bd-8a0a-4325-89bb-329147622f1a)'
+#     subscriptionId: '94ef17bd-8a0a-4325-89bb-329147622f1a'
+#     action: 'Create Or Update Resource Group'
+#     resourceGroupName: 'rg-ou'
+#     location: 'UK South'
+#     templateLocation: 'Linked artifact'
+#     csmFile: 'other-biceps/OU/dihAzureTemplate.bicep'
+#     deploymentMode: 'Incremental'
+#     deploymentOutputs: 'Deployment'

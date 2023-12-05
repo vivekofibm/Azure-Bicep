@@ -1,0 +1,48 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "env": {
+            "value": "acct"
+        },
+        "initial": {
+            "value": "ou-dih"
+        },
+        "short_location": {
+            "value": "we"
+        },
+        "networkRange": {
+            "value": 103
+        },
+        "subnetAPIM": {
+            "value": "API"
+        },
+        "subnetCosmosDB": {
+            "value": "DB"
+        },
+        "subnetDBSQL": {
+            "value": "DBSQL"
+        },
+        "subnetSAP": {
+            "value": "SAPCC"
+        },
+        "subnetStub": {
+            "value": "STUB"
+        },
+        "subnetqavm": {
+            "value": "QAVM"
+        },
+        "subnetdevelopment": {
+            "value": "development"
+        },
+        "subnetdatalake": {
+            "value": "DataLake"
+        },
+        "subnetAzureBastion": {
+            "value": "AzureBastionSubnet"
+        }
+
+        
+        }
+    
+}

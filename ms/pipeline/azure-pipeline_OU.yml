@@ -1,0 +1,361 @@
+trigger:
+- none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  projectName: ou-rn-dih
+  env: dev
+  serviceConnection: it-rtcn2-dev-uks
+  subscriptionId: ac7defee-ff3f-4a51-96a3-d44f37a5a2bc
+  tenantId: 0e2ed455-96af-4100-bed3-a8e5fd981685
+  objectId: 6a06b3bd-b1c7-4a75-854d-79097f6a45f6
+  location: 'UK South'
+  shortlocation: uks
+  #for future use.
+  apimResourceGroup: $(projectName)-apim-$(env)-rg-$(shortlocation)
+  cosmodbResourceGroup: $(projectName)-cosmosdbdev-$(env)-rg-$(shortlocation)
+  adfResourceGroup: $(projectName)-adf-$(env)-rg-$(shortlocation)
+  kvResourceGroup: $(projectName)-kv1-$(env)-rg-$(shortlocation)
+  dlResourceGroup: $(projectName)-dl-$(env)-rg-$(shortlocation)
+  funcResourceGroup: $(projectName)-func-$(env)-rg-$(shortlocation)
+  monResourceGroup: $(projectName)-mon-$(env)-rg-$(shortlocation)
+  appgwResourceGroup: $(projectName)-appgw-$(env)-rg-$(shortlocation)
+  sqlsrvResourceGroup: $(projectName)-sqlsrv-$(env)-rg-$(shortlocation)
+  resourceGroup: it-rtcn2-dev-uks
+
+  networkRange: 101
+  apiManagementName: $(projectName)-$(env)-apim-$(shortlocation)-1
+  logAnalyticsWorkspaceName: $(projectName)-$(env)-la-$(shortlocation)
+  keyVaultName: $(projectName)-$(env)-kv-$(shortlocation)
+  cosmosdbaccount: $(projectName)-$(env)-cd-$(shortlocation)
+  cosmosdbprivateendpoint: $(projectName)-$(env)-cd-pen-$(shortlocation)
+  publisherEmail: rod.norfor@open.ac.uk
+  publisherName: Rod Norfor
+  datalakeStoreName: $(projectName)$(env)dl$(shortlocation)
+  rootCertificateName: $(projectName)-$(env)-root-cert
+  gatewayCertificateName: $(projectName)-$(env)-gw-cert
+  portalCertificateName: $(projectName)-$(env)-portal-cert
+  managementCertificateName: $(projectName)-$(env)-management-cert
+  rootCertificateFileName: azure-norfor-net.pfx
+  gatewayCertificateFileName: api-azure-norfor-net.pfx
+  portalCertificateFileName: portal-azure-norfor-net.pfx
+  managementCertificateFileName: management-azure-norfor-net.pfx
+  rootCertificatePassword: abc123$
+  gatewayCertificatePassword: abc123$
+  portalCertificatePassword: abc123$
+  managementCertificatePassword: abc123$
+  apimUserIdentity: $(projectName)-$(env)-apim-msi
+  appgwUserIdentity: $(projectName)-$(env)-appgw-msi
+  domainName: azure.norfor.net
+  gatewayHostName: api.$(domainName)
+  portalHostName: portal.$(domainName)
+  managementHostName: management.$(domainName)
+
+steps:
+- task: AzureResourceManagerTemplateDeployment@3
+  displayName: Deploy Event Hub
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: $(serviceConnection)
+    subscriptionId: $(subscriptionId)
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: $(resourceGroup)
+    location: $(location)
+    templateLocation: 'Linked artifact'
+    csmFile: './eventhub/eventhub-template.bicep'
+    overrideParameters: '-projectName $(projectName)-$(env)-$(shortlocation)'
+    deploymentMode: 'Incremental'
+    deploymentOutputs: EventHubs
+
+- task: AzureResourceManagerTemplateDeployment@3
+  displayName: Deploy Log Analytics
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: $(serviceConnection)
+    subscriptionId: $(subscriptionId)
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: $(resourceGroup)
+    location: $(location)
+    templateLocation: 'Linked artifact'
+    csmFile: './loganalytics/loganalytics-template.bicep'
+    deploymentMode: 'Incremental'
+    deploymentOutputs: LogAnalytics
+
+- task: AzureResourceManagerTemplateDeployment@3
+  displayName: Deploy VNet & Subnets
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: $(serviceConnection)
+    subscriptionId: $(subscriptionId)
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: $(resourceGroup)
+    location: $(location)
+    templateLocation: 'Linked artifact'
+    csmFile: './vnet/vnet-and-subnets.bicep'
+    overrideParameters: -projectName $(projectName) -env $(env) -networkRange $(networkRange)
+    deploymentMode: 'Incremental'
+    deploymentOutputs: VNet
+
+
+- bash: |
+    echo "##vso[task.setvariable variable=eventHubName]$(echo $EVENTHUB_OUTPUTS | jq -r '.eventHubName.value')"
+    echo "##vso[task.setvariable variable=eventHubAuthorizationRuleId]$(echo $EVENTHUB_OUTPUTS | jq -r '.eventHubAuthorizationRuleId.value')"
+    echo "##vso[task.setvariable variable=logAnalyticsWorkspaceId]$(echo $LOGANALYTICS_OUTPUTS | jq -r '.logAnalyticsWorkspaceId.value')"
+    echo "##vso[task.setvariable variable=appInsightsId]$(echo $LOGANALYTICS_OUTPUTS | jq -r '.appInsightsId.value')"
+    echo "##vso[task.setvariable variable=appInsightsName]$(echo $LOGANALYTICS_OUTPUTS | jq -r '.appInsightsName.value')"
+    echo "##vso[task.setvariable variable=appInsightsInstrumentationKey]$(echo $LOGANALYTICS_OUTPUTS | jq -r '.appInsightsInstrumentationKey.value')"
+    echo "##vso[task.setvariable variable=vnet]$(echo $VNET_OUTPUTS | jq -r '.vnet.value')"
+    echo "##vso[task.setvariable variable=cosmosdbsubnet]$(echo $VNET_OUTPUTS | jq -r '.cosmosdbsubnet.value')"
+    echo "##vso[task.setvariable variable=eventhubsubnet]$(echo $VNET_OUTPUTS | jq -r '.eventhubsubnet.value')"
+    echo "##vso[task.setvariable variable=functionssubnet]$(echo $VNET_OUTPUTS | jq -r '.functionssubnet.value')"
+    echo "##vso[task.setvariable variable=appgwsubnet]$(echo $VNET_OUTPUTS | jq -r '.appgwsubnet.value')"
+    echo "##vso[task.setvariable variable=datawarehousesubnet]$(echo $VNET_OUTPUTS | jq -r '.datawarehousessubnet.value')"
+    echo "##vso[task.setvariable variable=apimsubnet]$(echo $VNET_OUTPUTS | jq -r '.apimsubnet.value')"
+
+    echo "##vso[task.setvariable variable=vnetname]$(echo $VNET_OUTPUTS | jq -r '.vnetname.value')"
+    echo "##vso[task.setvariable variable=cosmosdbsubnetname]$(echo $VNET_OUTPUTS | jq -r '.cosmosdbsubnetname.value')"
+    echo "##vso[task.setvariable variable=eventhubsubnetname]$(echo $VNET_OUTPUTS | jq -r '.eventhubsubnetname.value')"
+    echo "##vso[task.setvariable variable=functionssubnetname]$(echo $VNET_OUTPUTS | jq -r '.functionssubnetname.value')"
+    echo "##vso[task.setvariable variable=appgwsubnetname]$(echo $VNET_OUTPUTS | jq -r '.appgwsubnetname.value')"
+    echo "##vso[task.setvariable variable=datawarehousesubnetname]$(echo $VNET_OUTPUTS | jq -r '.datawarehousessubnetname.value')"
+    echo "##vso[task.setvariable variable=apimsubnetname]$(echo $VNET_OUTPUTS | jq -r '.apimsubnetname.value')"
+
+  displayName: 'Parse ARM deploymentOutputs '
+  env:
+    EVENTHUB_OUTPUTS: $(EventHubs)
+    LOGANALYTICS_OUTPUTS: $(LogAnalytics)
+    VNET_OUTPUTS: $(VNet)
+
+- task: AzureResourceManagerTemplateDeployment@3
+  displayName: Deploy Keyvault
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: $(serviceConnection)
+    subscriptionId: $(subscriptionId)
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: $(resourceGroup)
+    location: $(location)
+    templateLocation: 'Linked artifact'
+    csmFile: './keyvault/keyvault-diag.bicep'
+    overrideParameters: >
+      -keyVaultName $(keyVaultName)
+      -enabledForTemplateDeployment true
+      -tenantId $(tenantId)
+      -objectId $(objectId)
+      -eventHubAuthorizationRuleId $(eventHubAuthorizationRuleId) 
+      -eventHubName $(eventHubName) 
+      -workspaceId $(logAnalyticsWorkspaceId)
+    deploymentMode: 'Incremental'
+    deploymentOutputs: keyVault
+
+- task: AzureCLI@2
+  displayName: Deploy Root SSL Certificate
+  inputs:
+    azureSubscription: 'it-rtcn2-dev-uks'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: 'az keyvault certificate import --vault-name "$(keyVaultName)" --name "$(rootCertificateName)" --file "$(System.DefaultWorkingDirectory)/SSLCertificates/$(projectName)/$(env)/$(rootCertificateFileName)" --password "$(rootCertificatePassword)"'
+
+- task: AzureCLI@2
+  displayName: Deploy Gateway SSL Certificate
+  inputs:
+    azureSubscription: 'it-rtcn2-dev-uks'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: 'az keyvault certificate import --vault-name "$(keyVaultName)" --name "$(gatewayCertificateName)" --file "$(System.DefaultWorkingDirectory)/SSLCertificates/$(projectName)/$(env)/$(gatewayCertificateFileName)" --password "$(gatewayCertificatePassword)"'
+
+- task: AzureCLI@2
+  displayName: Deploy Portal SSL Certificate
+  inputs:
+    azureSubscription: 'it-rtcn2-dev-uks'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: 'az keyvault certificate import --vault-name "$(keyVaultName)" --name "$(portalCertificateName)" --file "$(System.DefaultWorkingDirectory)/SSLCertificates/$(projectName)/$(env)/$(portalCertificateFileName)" --password "$(portalCertificatePassword)"'
+
+- task: AzureCLI@2
+  displayName: Deploy Management SSL Certificate
+  inputs:
+    azureSubscription: 'it-rtcn2-dev-uks'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: 'az keyvault certificate import --vault-name "$(keyVaultName)" --name "$(managementCertificateName)" --file "$(System.DefaultWorkingDirectory)/SSLCertificates/$(projectName)/$(env)/$(managementCertificateFileName)" --password "$(managementCertificatePassword)"'
+
+- task: AzureResourceManagerTemplateDeployment@3
+  displayName: Create ApiM UserAssignedIdentity
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: $(serviceConnection)
+    subscriptionId: $(subscriptionId)
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: $(resourceGroup)
+    location: $(location)
+    templateLocation: 'Linked artifact'
+    csmFile: './managedidentity/managedidentity.bicep'
+    overrideParameters: >
+      -existingKeyVaultName $(keyVaultName)
+      -identityName $(apimUserIdentity)
+    deploymentOutputs: ApimManagedIdentities
+
+- task: AzureResourceManagerTemplateDeployment@3
+  displayName: Create AppGW UserAssignedIdentity
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: $(serviceConnection)
+    subscriptionId: $(subscriptionId)
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: $(resourceGroup)
+    location: $(location)
+    templateLocation: 'Linked artifact'
+    csmFile: './managedidentity/managedidentity.bicep'
+    overrideParameters: >
+      -existingKeyVaultName $(keyVaultName)
+      -identityName $(appgwUserIdentity)
+    deploymentOutputs: AppgwManagedIdentities
+
+- bash: |
+    echo "##vso[task.setvariable variable=ApimIdentityName]$(echo $APIM_MANAGEDIDENTITIES_OUTPUTS | jq -r '.identityName.value')"
+    echo "##vso[task.setvariable variable=ApimIdentityId]$(echo $APIM_MANAGEDIDENTITIES_OUTPUTS | jq -r '.identityId.value')"
+    echo "##vso[task.setvariable variable=ApimIdentityPrincipalId]$(echo $APIM_MANAGEDIDENTITIES_OUTPUTS | jq -r '.identityPrincipalId.value')"   
+    echo "##vso[task.setvariable variable=AppgwIdentityName]$(echo $APPGW_MANAGEDIDENTITIES_OUTPUTS | jq -r '.identityName.value')"
+    echo "##vso[task.setvariable variable=AppgwIdentityId]$(echo $APPGW_MANAGEDIDENTITIES_OUTPUTS | jq -r '.identityId.value')"
+    echo "##vso[task.setvariable variable=AppgwIdentityPrincipalId]$(echo $APPGW_MANAGEDIDENTITIES_OUTPUTS | jq -r '.identityPrincipalId.value')"  
+
+  displayName: 'Parse ARM Deployment Outputs for ManagedIdentities'
+  env: 
+    APIM_MANAGEDIDENTITIES_OUTPUTS: $(ApimManagedIdentities)
+    APPGW_MANAGEDIDENTITIES_OUTPUTS: $(AppgwManagedIdentities)
+
+- task: AzureResourceManagerTemplateDeployment@3
+  displayName: Deploy Cosmo DB
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: $(serviceConnection)
+    subscriptionId: $(subscriptionId)
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: $(resourceGroup)
+    location: $(location)
+    templateLocation: 'Linked artifact'
+    csmFile: './cosmosdb/cosmos-private-endpoint-containers-diag.bicep'
+    overrideParameters: >
+      -virtualNetworkName $(vnetname)
+      -subnetName $(cosmosdbsubnetname)
+      -accountName $(cosmosdbaccount)
+      -publicNetworkAccess Enabled
+      -privateEndpointName $(cosmosdbprivateendpoint)
+      -eventHubAuthorizationRuleId $(eventHubAuthorizationRuleId)
+      -eventHubName $(eventHubName)
+      -workspaceId $(logAnalyticsWorkspaceId)
+    deploymentMode: 'Incremental'
+    deploymentOutputs: cosmosdb
+
+- task: AzureResourceManagerTemplateDeployment@3
+  displayName: Deploy APIM
+  timeoutInMinutes: 90
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: $(serviceConnection)
+    subscriptionId: $(subscriptionId)
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: $(resourceGroup)
+    location: $(location)
+    templateLocation: 'Linked artifact'
+    csmFile: './apim/api-management-with-internal-vnet-publicip-diag-appgw.bicep'
+    overrideParameters: >
+      -virtualNetworkName $(vnetname)
+      -subnetName $(apimsubnetname)
+      -publisherName '$(publisherName)'
+      -publisherEmail $(publisherEmail)
+      -apiManagementName $(apiManagementName)
+      -eventHubAuthorizationRuleId $(eventHubAuthorizationRuleId)
+      -eventHubName $(eventHubName)
+      -workspaceId $(logAnalyticsWorkspaceId)
+      -appInsightsId $(appInsightsId)
+      -appInsightsInstrumentationKey $(appInsightsInstrumentationKey)
+      -identityName $(ApimIdentityName)
+      -sslCertificateKeyVaultName $(keyVaultName)
+      -proxyCertificateName $(gatewayCertificateName)
+      -portalCertificateName $(portalCertificateName)
+      -managementCertificateName $(managementCertificateName)
+      -mgmt_backend_hostname $(managementHostName)
+      -apigw_backend_hostname $(gatewayHostName)
+      -portal_backend_hostname $(portalHostName)
+    deploymentMode: 'Incremental'
+    deploymentOutputs: apim
+
+- bash: |
+    echo "##vso[task.setvariable variable=apimIP]$(echo $APIM_OUTPUTS | jq -r '.apimIP.value')"
+
+  displayName: 'Parse ARM Deployment Outputs'
+  env:
+    APIM_OUTPUTS: $(apim)    
+
+- task: AzureResourceManagerTemplateDeployment@3
+  displayName: Deploy private DNS Zone
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: $(serviceConnection)
+    subscriptionId: $(subscriptionId)
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: $(resourceGroup)
+    location: $(location)
+    templateLocation: 'Linked artifact'
+    csmFile: ./privatednszone/private-dns-zone.bicep
+    overrideParameters: >
+      -privateDNSZoneName $(domainName)
+      -privateEndpointName $(projectName)-$(env)-dns-pen
+      -virtualNetworkName $(vnetname)
+      -apimIP $(apimIP)
+
+- task: AzureResourceManagerTemplateDeployment@3
+  displayName: Deploy DatalakeStore gen2
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: $(serviceConnection)
+    subscriptionId: $(subscriptionId)
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: $(resourceGroup)
+    location: $(location)
+    templateLocation: 'Linked artifact'
+    csmFile: './adls2/adls2-folders-diag.bicep'
+    overrideParameters: >
+      -storageName $(datalakeStoreName)
+      -eventHubAuthorizationRuleId $(eventHubAuthorizationRuleId)
+      -eventHubName $(eventHubName)
+      -workspaceId $(logAnalyticsWorkspaceId)
+    deploymentMode: 'Incremental'
+    deploymentOutputs: dl
+
+- task: AzureResourceManagerTemplateDeployment@3
+  displayName: Deploy Application Gateway & WAF
+  timeoutInMinutes: 90
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: $(serviceConnection)
+    subscriptionId: $(subscriptionId)
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: $(resourceGroup)
+    location: $(location)
+    templateLocation: 'Linked artifact'
+    csmFile: './applicationgateway/applicationgateway-diag-apim.bicep'
+    overrideParameters: >
+      -projectName $(projectname)
+      -env $(env)
+      -subnetName $(appgwsubnetname)
+      -backendSubnetName $(apimsubnetname)
+      -AGWMaxCapacity 5
+      -sslCertificateKeyVaultName $(keyVaultName)
+      -rootCertificateName $(rootCertificateName)
+      -gatewayCertificateName $(gatewayCertificateName)
+      -portalCertificateName $(portalCertificateName)
+      -managementCertificateName $(managementCertificateName)
+      -identityName $(AppgwIdentityName)
+      -mgmt_backend_hostname $(managementHostName)
+      -apigw_backend_hostname $(gatewayHostName)
+      -portal_backend_hostname $(portalHostName)
+      -eventHubAuthorizationRuleId $(eventHubAuthorizationRuleId)
+      -eventHubName $(eventHubName)
+      -workspaceId $(logAnalyticsWorkspaceId)
+    deploymentMode: 'Incremental'
+    deploymentOutputs: appgw
